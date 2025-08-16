@@ -14,13 +14,31 @@ interface IconProps {
 }
 
 const BookmarkIcon = ({ className }: IconProps) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
   </svg>
 );
 
 const BookmarkFilledIcon = ({ className }: IconProps) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
   </svg>
 );
@@ -31,7 +49,11 @@ interface MovieItemProps {
   isInWatchlist?: boolean;
 }
 
-const MovieItem = ({ movie, className, isInWatchlist = false }: MovieItemProps) => {
+const MovieItem = ({
+  movie,
+  className,
+  isInWatchlist = false,
+}: MovieItemProps) => {
   const [inWatchlist, setInWatchlist] = useState(isInWatchlist);
   const { mutate: updateWatchlist, isPending } = useWatchlistMutation();
 
@@ -41,16 +63,16 @@ const MovieItem = ({ movie, className, isInWatchlist = false }: MovieItemProps) 
 
   const handleWatchlistToggle = () => {
     updateWatchlist(
-      { 
-        movieId: movie.id, 
-        watchlist: !inWatchlist 
-      }, 
+      {
+        movieId: movie.id,
+        watchlist: !inWatchlist,
+      },
       {
         onSuccess: () => {
           setInWatchlist(!inWatchlist);
           toast.success(
-            !inWatchlist 
-              ? `${movie.title} added to watchlist` 
+            !inWatchlist
+              ? `${movie.title} added to watchlist`
               : `${movie.title} removed from watchlist`
           );
         },
@@ -62,15 +84,22 @@ const MovieItem = ({ movie, className, isInWatchlist = false }: MovieItemProps) 
   };
 
   return (
-    <div className={cn("flex flex-col rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow", className)}>
-      <div className="relative aspect-[2/3] w-full">
-        <Image
-          src={posterUrl}
-          alt={movie.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+    <div className={cn("flex flex-col overflow-hidden relative", className)}>
+      <div className=" w-full">
+        <div className="relative aspect-[2/3] group overflow-hidden">
+          <Image
+            src={posterUrl}
+            alt={movie.title}
+            fill
+            className="object-cover rounded-xl"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        <div className="absolute w-full h-full flex items-center justify-center bg-black/50 p-4 rounded-xl bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <p className="text-sm text-gray-300 ">{movie.overview}</p>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent rounded-xl"></div>
+        </div>
+        </div>
+
         <Button
           onClick={handleWatchlistToggle}
           disabled={isPending}
@@ -85,14 +114,16 @@ const MovieItem = ({ movie, className, isInWatchlist = false }: MovieItemProps) 
           )}
         </Button>
       </div>
-      <div className="p-4 flex-1 flex flex-col">
-        <h3 className="font-bold text-lg line-clamp-1">{movie.title}</h3>
-        <p className="text-sm text-gray-500">{movie.release_date?.split("-")[0]}</p>
+      <div className="p-4 flex-1 flex items-start justify-between">
+        <div className="flex flex-col gap-1">
+          <h3 className="font-bold text-lg line-clamp-1">{movie.title}</h3>
+          <p className="text-sm ">{movie.release_date?.split("-")[0]}</p>
+        </div>
+
         <div className="mt-2 flex items-center gap-1">
           <span className="text-amber-500">★</span>
           <span>{movie.vote_average?.toFixed(1)}</span>
         </div>
-        <p className="mt-2 text-sm line-clamp-2">{movie.overview}</p>
       </div>
     </div>
   );

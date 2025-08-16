@@ -5,6 +5,15 @@ import MovieItem from "./MovieItem";
 import { MovieCategory, Movie } from "../types/movie";
 import { useMoviesByCategory } from "../hooks/useMovies";
 import Link from "next/link";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/common/components/ui/carousel";
+import { ChevronRight } from "lucide-react";
+import { Button } from "@/common/components/ui/button";
 
 interface MoviesListProps {
   category: MovieCategory;
@@ -18,11 +27,14 @@ const MoviesList = ({
   category,
   title,
   description,
-  limit = 8,
-  showSeeMore = true
+  limit = 10,
+  showSeeMore = true,
 }: MoviesListProps) => {
   const [page] = useState(1);
-  const { data, isLoading, isError, error } = useMoviesByCategory(category, page);
+  const { data, isLoading, isError, error } = useMoviesByCategory(
+    category,
+    page
+  );
 
   if (isLoading) {
     return (
@@ -47,40 +59,48 @@ const MoviesList = ({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-gray-500">{description}</p>
+          <p className="text-gray-300">{description}</p>
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {data?.results.slice(0, limit).map((movie: Movie) => (
-          <MovieItem 
-            key={movie.id} 
-            movie={movie} 
-            isInWatchlist={false} // We don't know if it's in the watchlist, so default to false
+      <div className="relative">
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="w-full"
+        >
+          <CarouselContent>
+            {data?.results.slice(0, limit).map((movie: Movie) => (
+              <CarouselItem
+                key={movie.id}
+                className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 pl-4"
+              >
+                <MovieItem movie={movie} isInWatchlist={false} />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious
+            className="left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white/90 border-0 shadow-md"
+            variant="ghost"
           />
-        ))}
+          <CarouselNext
+            className="right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white/90 border-0 shadow-md"
+            variant="ghost"
+          />
+        </Carousel>
       </div>
 
       {showSeeMore && (
         <div className="flex justify-end mt-4">
-          <Link 
+          <Link
             href={`/movies/${category}`}
-            className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+            className="text-primary hover:text-primary/80 font-medium flex items-center gap-1"
           >
-            See more
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-4 w-4" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M9 5l7 7-7 7" 
-              />
-            </svg>
+            <Button>
+              See all
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </Link>
         </div>
       )}
