@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function AppLayout({
   children,
 }: {
@@ -5,7 +7,8 @@ export default function AppLayout({
 }) {
   return (
     <div>
-      <main className="container mx-auto py-6 px-6">
+   
+      <main >
         {children}
       </main>
     </div>
