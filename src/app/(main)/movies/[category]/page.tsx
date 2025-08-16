@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useMoviesByCategory } from "@/modules/movies/hooks/useMovies";
 import MovieItem from "@/modules/movies/components/MovieItem";
-import { Button } from "@/common/components/ui/button";
 import { Movie, MovieCategory } from "@/modules/movies/types/movie";
 import { notFound } from "next/navigation";
+import useInfiniteScroll from "react-infinite-scroll-hook";
+import { Skeleton } from "@/common/components/ui/skeleton";
 
 interface CategoryPageProps {
   params: {
@@ -13,7 +14,6 @@ interface CategoryPageProps {
   };
 }
 
-// Define mapping for titles and descriptions
 const categoryInfo = {
   "top_rated": {
     title: "Top Rated Movies",
@@ -41,22 +41,82 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
   const validCategory = isValidCategory ? (category as MovieCategory) : "top_rated"; 
   const [page, setPage] = useState(1);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [showSkeleton, setShowSkeleton] = useState(true);
+  
   const { data, isLoading, isError, error } = useMoviesByCategory(validCategory, page);
-
+  
+  const hasNextPage = page < totalPages;
+  
+  const loadMore = useCallback(() => {
+    if (!isLoading && hasNextPage) {
+      setPage(prevPage => prevPage + 1);
+    }
+  }, [isLoading, hasNextPage]);
+  
+  const [infiniteRef] = useInfiniteScroll({
+    loading: isLoading,
+    hasNextPage,
+    onLoadMore: loadMore,
+    disabled: Boolean(error),
+    rootMargin: '0px 0px 400px 0px'
+  });
+  
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [page]);
+    if (data) {
+ 
+      if (!showSkeleton) {
+        if (page === 1) {
+          setMovies(data.results);
+        } else {
+          setMovies(prev => [...prev, ...data.results]);
+        }
+        setTotalPages(data.total_pages);
+      }
+    }
+  }, [data, page, showSkeleton]);
+  
+  useEffect(() => {
+    setPage(1);
+    setMovies([]);
+    setShowSkeleton(true);
+  }, [validCategory]);
   
   useEffect(() => {
     if (!isValidCategory) {
       notFound();
     }
   }, [isValidCategory]);
+  
+  useEffect(() => {
+    if (!isLoading && page === 1) {
+      const timer = setTimeout(() => {
+        setShowSkeleton(false);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, page]);
 
-  if (isLoading) {
+  if ((isLoading || showSkeleton) && page === 1) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">{categoryInfo[validCategory].title}</h1>
+          <p className="text-gray-500 mt-2">{categoryInfo[validCategory].description}</p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {Array(10).fill(0).map((_, index) => (
+            <div key={index} className="flex flex-col">
+              <Skeleton className="aspect-[2/3] w-full h-auto" />
+              <Skeleton className="h-6 mt-3 w-3/4" />
+              <Skeleton className="h-4 mt-2 w-1/3" />
+              <Skeleton className="h-4 mt-2 w-full" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -78,9 +138,8 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         <p className="text-gray-500 mt-2">{categoryInfo[validCategory].description}</p>
       </div>
 
-      {/* Grid View */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {data?.results.map((movie: Movie) => (
+        {movies.map((movie: Movie) => (
           <MovieItem 
             key={movie.id} 
             movie={movie}
@@ -88,27 +147,29 @@ export default function CategoryPage({ params }: CategoryPageProps) {
           />
         ))}
       </div>
-
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-8 py-4">
-        <Button
-          variant="outline"
-          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          disabled={page === 1}
+      
+      {/* Loading indicator for infinite scrolling */}
+      {hasNextPage && (
+        <div 
+          ref={infiniteRef} 
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pt-4"
         >
-          Previous
-        </Button>
-        <span className="font-medium">
-          Page {page} of {data?.total_pages}
-        </span>
-        <Button
-          variant="outline"
-          onClick={() => setPage((prev) => (prev < (data?.total_pages || 1) ? prev + 1 : prev))}
-          disabled={page >= (data?.total_pages || 1)}
-        >
-          Next
-        </Button>
-      </div>
+          {(isLoading || showSkeleton) && Array(5).fill(0).map((_, index) => (
+            <div key={`loading-${index}`} className="flex flex-col">
+              <Skeleton className="aspect-[2/3] w-full h-auto" />
+              <Skeleton className="h-6 mt-3 w-3/4" />
+              <Skeleton className="h-4 mt-2 w-1/3" />
+              <Skeleton className="h-4 mt-2 w-full" />
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {!hasNextPage && movies.length > 0 && (
+        <div className="text-center py-8 text-gray-500">
+          You&apos;ve reached the end of the list
+        </div>
+      )}
     </div>
   );
 }
