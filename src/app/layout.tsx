@@ -16,11 +16,6 @@ const poppins = Poppins({
   subsets: ["latin"],
 });
 
-const inter = Inter({
-  variable: "--font-inter",
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "GoMovie",
@@ -34,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${roboto.variable} ${poppins.variable} ${inter.variable} antialiased`}>
+      <body className={`${roboto.variable} ${poppins.variable} } antialiased`}>
         <ReactQueryProvider>{children}</ReactQueryProvider>
         <Toaster />
       </body>
