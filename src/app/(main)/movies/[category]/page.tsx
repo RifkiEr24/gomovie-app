@@ -8,8 +8,8 @@ interface CategoryPageProps {
   };
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { category } = await params;
+export default function CategoryPage({ params }: CategoryPageProps) {
+  const { category } = params;
   
   const validCategories = ["top_rated", "upcoming", "now_playing", "popular"];
   if (!validCategories.includes(category)) {

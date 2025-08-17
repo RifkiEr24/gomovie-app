@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Roboto, Poppins, Inter } from "next/font/google";
+import { Roboto, Poppins } from "next/font/google";
 import "./globals.css";
 import ReactQueryProvider from "@/common/providers/ReactQueryProviders";
 import { Toaster } from "@/common/components/ui/sonner";
-import Link from "next/link";
 import Navbar from "@/common/Navbar";
 import WatchlistProvider from "@/modules/watchlist/providers/WatchlistProvider";
 

@@ -19,7 +19,6 @@ export default function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
-    const [isSearchFocused, setIsSearchFocused] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const isActive = (path: string) => {
@@ -134,8 +133,7 @@ export default function Navbar() {
                             className="w-full py-2 pl-10 pr-10 h-10 bg-secondary/50 border-secondary"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={() => setIsSearchFocused(true)}
-                            onBlur={() => setIsSearchFocused(false)}
+                          
                         />
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         {searchQuery && (
@@ -157,7 +155,6 @@ export default function Navbar() {
                             isSearchActive() ? "bg-secondary text-primary" : ""
                         )}
                         onClick={() => {
-                            setIsSearchFocused(true);
                             setTimeout(() => searchInputRef.current?.focus(), 100);
                         }}
                     >
