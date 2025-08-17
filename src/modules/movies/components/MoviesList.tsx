@@ -16,11 +16,15 @@ import { ChevronRight } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 
 interface MoviesListProps {
-  category: MovieCategory;
+  category?: MovieCategory;
   title: string;
   description: string;
   limit?: number;
   showSeeMore?: boolean;
+  movies?: Movie[];
+  isLoading?: boolean;
+  isError?: boolean;
+  error?: Error;
 }
 
 const MoviesList = ({
@@ -29,12 +33,21 @@ const MoviesList = ({
   description,
   limit = 10,
   showSeeMore = true,
+  movies: propMovies,
+  isLoading: propIsLoading,
+  isError: propIsError,
+  error: propError,
 }: MoviesListProps) => {
   const [page] = useState(1);
-  const { data, isLoading, isError, error } = useMoviesByCategory(
-    category,
+  const { data, isLoading: queryIsLoading, isError: queryIsError, error: queryError } = useMoviesByCategory(
+    category, 
     page
   );
+  
+  const movies = propMovies || data?.results;
+  const isLoading = propIsLoading !== undefined ? propIsLoading : queryIsLoading;
+  const isError = propIsError !== undefined ? propIsError : queryIsError;
+  const error = propError || queryError;
 
   if (isLoading) {
     return (
@@ -48,7 +61,7 @@ const MoviesList = ({
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-red-500">
-          Error loading movies: {error.message}
+          Error loading movies: {error?.message || "Unknown error"}
         </div>
       </div>
     );
@@ -56,12 +69,14 @@ const MoviesList = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-gray-300">{description}</p>
+      {(title || description) && (
+        <div className="flex items-center justify-between">
+          <div>
+            {title && <h1 className="text-2xl font-bold">{title}</h1>}
+            {description && <p className="text-gray-300">{description}</p>}
+          </div>
         </div>
-      </div>
+      )}
       <div className="relative">
         <Carousel
           opts={{
@@ -71,7 +86,7 @@ const MoviesList = ({
           className="w-full"
         >
           <CarouselContent>
-            {data?.results.slice(0, limit).map((movie: Movie) => (
+            {movies?.slice(0, limit).map((movie: Movie) => (
               <CarouselItem
                 key={movie.id}
                 className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 pl-4"
@@ -82,11 +97,11 @@ const MoviesList = ({
           </CarouselContent>
           <CarouselPrevious
             className="left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white/90 border-0 shadow-md"
-            variant="ghost"
+            variant="default"
           />
           <CarouselNext
             className="right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white/90 border-0 shadow-md"
-            variant="ghost"
+            variant="default"
           />
         </Carousel>
       </div>

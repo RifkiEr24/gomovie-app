@@ -5,43 +5,10 @@ import { Movie } from "../types/movie";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Button } from "@/common/components/ui/button";
-import { useWatchlistMutation } from "@/modules/watchlist/hooks/useWatchlist";
+import { useWatchlistStore } from "@/modules/watchlist/stores/watchlistStore";
 import { toast } from "sonner";
-
-// Bookmark icons
-interface IconProps {
-  className?: string;
-}
-
-const BookmarkIcon = ({ className }: IconProps) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-  </svg>
-);
-
-const BookmarkFilledIcon = ({ className }: IconProps) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-  </svg>
-);
+import Link from "next/link";
+import { Bookmark, BookmarkCheck, StarIcon } from "lucide-react";
 
 interface MovieItemProps {
   movie: Movie;
@@ -52,40 +19,50 @@ interface MovieItemProps {
 const MovieItem = ({
   movie,
   className,
-  isInWatchlist = false,
+  isInWatchlist: initialIsInWatchlist = false,
 }: MovieItemProps) => {
-  const [inWatchlist, setInWatchlist] = useState(isInWatchlist);
-  const { mutate: updateWatchlist, isPending } = useWatchlistMutation();
+  const { 
+    isInWatchlist, 
+    addToWatchlist, 
+    removeFromWatchlist 
+  } = useWatchlistStore();
+  
+  const [isPending, setIsPending] = useState(false);
+  
+  const inWatchlist = isInWatchlist(movie.id) || initialIsInWatchlist;
 
   const posterUrl = movie.poster_path
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : "/placeholder-image.jpg";
 
-  const handleWatchlistToggle = () => {
-    updateWatchlist(
-      {
-        movieId: movie.id,
-        watchlist: !inWatchlist,
-      },
-      {
-        onSuccess: () => {
-          setInWatchlist(!inWatchlist);
-          toast.success(
-            !inWatchlist
-              ? `${movie.title} added to watchlist`
-              : `${movie.title} removed from watchlist`
-          );
-        },
-        onError: () => {
-          toast.error("Failed to update watchlist. Please try again.");
-        },
+  const handleWatchlistToggle = async () => {
+    setIsPending(true);
+    try {
+      if (inWatchlist) {
+        await removeFromWatchlist(movie.id);
+        toast.success(`${movie.title} removed from watchlist`);
+      } else {
+        await addToWatchlist(movie.id);
+        toast.success(`${movie.title} added to watchlist`);
       }
-    );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      toast.error("Failed to update watchlist. Please try again.");
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
-    <div className={cn("flex flex-col overflow-hidden relative", className)}>
-      <div className=" w-full">
+    <div className={cn("flex flex-col overflow-hidden relative group", className)}>
+      <Link 
+        href={`/movies/detail/${movie.id}`} 
+        className="absolute inset-0 z-10 focus:outline-none focus-visible:ring focus-visible:ring-primary focus-visible:ring-opacity-50"
+      >
+        <span className="sr-only">View details for {movie.title}</span>
+      </Link>
+      
+      <div className="w-full">
         <div className="relative aspect-[2/3] group overflow-hidden">
           <Image
             src={posterUrl}
@@ -94,23 +71,28 @@ const MovieItem = ({
             className="object-cover rounded-xl"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
-        <div className="absolute w-full h-full flex items-center justify-center bg-black/50 p-4 rounded-xl bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute w-full h-full flex items-center justify-center bg-black/50 p-4 rounded-xl bottom-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-500">
             <p className="text-sm text-gray-300 ">{movie.overview}</p>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent rounded-xl"></div>
         </div>
         </div>
 
         <Button
-          onClick={handleWatchlistToggle}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleWatchlistToggle();
+          }}
           disabled={isPending}
           size="icon"
           variant="ghost"
-          className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5"
+          aria-label={inWatchlist ? `Remove ${movie.title} from watchlist` : `Add ${movie.title} to watchlist`}
+          className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 focus:bg-black/60 text-white rounded-full p-1.5 z-20 pointer-events-auto focus:outline-none focus:ring-2 focus:ring-white/50"
         >
           {inWatchlist ? (
-            <BookmarkFilledIcon className="h-5 w-5" />
+            <BookmarkCheck className="h-5 w-5" />
           ) : (
-            <BookmarkIcon className="h-5 w-5" />
+            <Bookmark className="h-5 w-5" />
           )}
         </Button>
       </div>
@@ -121,7 +103,7 @@ const MovieItem = ({
         </div>
 
         <div className="mt-2 flex items-center gap-1">
-          <span className="text-amber-500">★</span>
+          <StarIcon className="text-amber-500 fill-amber-500" size={15} />
           <span>{movie.vote_average?.toFixed(1)}</span>
         </div>
       </div>
