@@ -1,13 +1,11 @@
 import MovieDetailContent from "@/modules/movies/components/MovieDetailContent";
 
-interface MovieDetailPageProps {
-  params: {
-    id: string;
-  };
-}
+export default async function MovieDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
 
-export default function MovieDetailPage({ params }: MovieDetailPageProps) {
-  const { id } = params;
-  
   return <MovieDetailContent id={id} />;
 }
